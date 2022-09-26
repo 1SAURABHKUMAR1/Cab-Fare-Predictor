@@ -10,7 +10,7 @@ import { useJsApiLoader } from '@react-google-maps/api';
 const App = () => {
     const { isLoaded } = useJsApiLoader({
         id: 'google-map-script',
-        googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAP_API,
+        googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAP_API as string,
     });
     if (!isLoaded) {
         return <MainLoader />;
