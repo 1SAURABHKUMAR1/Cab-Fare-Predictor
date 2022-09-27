@@ -117,7 +117,7 @@ const Home = () => {
         suggestions: { data: allLocations },
         clearSuggestions,
     } = usePlacesAutocomplete({
-        requestOptions: { componentRestrictions: { country: 'India' } },
+        requestOptions: { componentRestrictions: { country: 'IN' } },
         debounce: 1000,
     });
 
