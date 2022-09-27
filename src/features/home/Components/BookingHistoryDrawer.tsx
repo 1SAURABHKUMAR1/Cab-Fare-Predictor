@@ -52,7 +52,7 @@ const BookingHistoryDrawer = ({
                         Booking History
                     </DrawerHeader>
                     <DrawerBody>
-                        {bookingHistory.length > 0 &&
+                        {bookingHistory?.length > 0 &&
                             bookingHistory.map((booking) => (
                                 <Box
                                     borderColor="rgb(228,228,228)"
