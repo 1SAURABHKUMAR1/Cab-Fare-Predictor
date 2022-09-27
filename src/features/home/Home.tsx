@@ -95,9 +95,13 @@ const Home = () => {
         const getTime = setInterval(() => {
             let time = new Date();
             setPickupTime(
-                `${time.getHours()}:${
+                `${
+                    time.getHours().toString().length < 2
+                        ? `0${time.getHours()}`
+                        : time.getHours()
+                }:${
                     time.getMinutes().toString().length < 2
-                        ? time.getMinutes() * 10
+                        ? `0${time.getMinutes()}`
                         : time.getMinutes()
                 }`,
             );
