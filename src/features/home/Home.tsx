@@ -127,9 +127,38 @@ const Home = () => {
                 margin="0px"
                 display="flex"
                 flex="1 1 0%"
-                flexDirection={{ base: 'column-reverse', md: 'row' }}
+                flexDirection={{ base: 'column', md: 'row' }}
                 width="100%"
             >
+                <Box pos="relative" bg="white" w="full">
+                    <GoogleMap
+                        zoom={15}
+                        options={{
+                            zoomControl: true,
+                            streetViewControl: false,
+                            mapTypeControl: false,
+                            fullscreenControl: true,
+                            styles: exampleMapStyles,
+                            scrollwheel: true,
+                            disableDoubleClickZoom: true,
+                        }}
+                        mapContainerClassName="w-full h-full"
+                        center={{ lat: 23.331929, lng: 85.362087 }}
+                    >
+                        {result && (
+                            <DirectionsRenderer
+                                directions={result}
+                                options={{
+                                    polylineOptions: {
+                                        strokeColor: '#313641',
+                                        strokeWeight: 4,
+                                    },
+                                }}
+                            />
+                        )}
+                    </GoogleMap>
+                </Box>
+
                 <Box
                     as="div"
                     display="flex"
@@ -425,35 +454,6 @@ const Home = () => {
                             </Box>
                         </Box>
                     )}
-                </Box>
-
-                <Box pos="relative" bg="white" w="full">
-                    <GoogleMap
-                        zoom={15}
-                        options={{
-                            zoomControl: true,
-                            streetViewControl: false,
-                            mapTypeControl: false,
-                            fullscreenControl: true,
-                            styles: exampleMapStyles,
-                            scrollwheel: true,
-                            disableDoubleClickZoom: true,
-                        }}
-                        mapContainerClassName="w-full h-full"
-                        center={{ lat: 23.331929, lng: 85.362087 }}
-                    >
-                        {result && (
-                            <DirectionsRenderer
-                                directions={result}
-                                options={{
-                                    polylineOptions: {
-                                        strokeColor: '#313641',
-                                        strokeWeight: 4,
-                                    },
-                                }}
-                            />
-                        )}
-                    </GoogleMap>
                 </Box>
             </Box>
         </>
