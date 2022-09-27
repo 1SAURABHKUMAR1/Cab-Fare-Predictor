@@ -11,6 +11,8 @@ import {
     InputLeftElement,
     Input,
     Button,
+    useDisclosure,
+    Tooltip,
 } from '@chakra-ui/react';
 
 import {
@@ -21,9 +23,6 @@ import {
 } from '@choc-ui/chakra-autocomplete';
 
 import { GoogleMap, DirectionsRenderer } from '@react-google-maps/api';
-
-import { exampleMapStyles } from 'Utils/mapStyles';
-import { cabs } from 'Utils/cabs';
 
 import {
     calculateRoute,
@@ -39,6 +38,14 @@ import { AiOutlineAim } from 'react-icons/ai';
 import { MdHistory } from 'react-icons/md';
 
 import ErrorToast from 'Utils/Toast/Error';
+import SuccessToast from 'Utils/Toast/Success';
+import { exampleMapStyles } from 'Utils/mapStyles';
+import { cabs } from 'Utils/cabs';
+
+import { bookingType, cabType } from 'Types';
+
+import localforage from 'localforage';
+import { BookingHistoryDrawer } from 'features';
 
 const Home = () => {
     const [pickupLocation, setPickupLocation] = useState<string>('');
@@ -59,6 +66,14 @@ const Home = () => {
     const [calculating, setCalculating] = useState<
         'idle' | 'error' | 'loading' | 'done'
     >('idle');
+    const [bookingCabStatus, setBookingCabStatus] = useState<
+        'loading' | 'done' | 'idle'
+    >('idle');
+    const [currrentCab, setCurrentCab] = useState<
+        'mini' | 'sedan' | 'prime' | 'suv'
+    >('mini');
+
+    const { isOpen, onOpen, onClose } = useDisclosure();
 
     const searchCab = async () => {
         setCalculating(() => 'loading');
@@ -121,6 +136,58 @@ const Home = () => {
         debounce: 1000,
     });
 
+    const selectCab = (id: 'mini' | 'sedan' | 'prime' | 'suv') => {
+        if (id !== 'mini' && id !== 'prime' && id !== 'sedan' && id !== 'suv') {
+            ErrorToast('Select A Valid Cab');
+            return;
+        }
+
+        setCurrentCab(() => id);
+    };
+
+    const bookCab = async () => {
+        setBookingCabStatus('loading');
+
+        try {
+            const currentCab: cabType | undefined = cabs.find(
+                (cab) => cab.id === currrentCab,
+            );
+            if (!currentCab) return;
+
+            const tripFare = calculateFare({
+                perKm: currentCab.perKm ?? 10,
+                distance: distance.value,
+                time: pickupTime,
+            });
+
+            let currentBookings =
+                ((await localforage.getItem(
+                    'cab-booking',
+                )) as unknown as bookingType[]) ?? [];
+
+            currentBookings = [
+                ...currentBookings,
+                {
+                    Dated: new Date().toDateString(),
+                    Pickup: pickupLocation,
+                    Destination: destination,
+                    Distance: distance.text,
+                    'Trip Duration': duration.text,
+                    'Trip Fare': tripFare,
+                },
+            ];
+
+            await localforage.setItem('cab-booking', currentBookings);
+
+            SuccessToast('Booking SuccessFull');
+
+            setBookingCabStatus('done');
+        } catch (error) {
+            ErrorToast('Failed to Book');
+            setBookingCabStatus('idle');
+        }
+    };
+
     return (
         <>
             <Box
@@ -173,13 +240,16 @@ const Home = () => {
                         bg="white"
                         px="5"
                         pt="5"
-                        display={{ base: 'none', md: 'block' }}
+                        display={{ base: 'unset', md: 'block' }}
                     >
                         <Box pos={'relative'} display={'flex'}>
-                            <IconButton
-                                aria-label="Open Side Bar"
-                                icon={<MdHistory fontSize="1.5rem" />}
-                            />
+                            <Tooltip label="Booking History">
+                                <IconButton
+                                    onClick={onOpen}
+                                    aria-label="Open Side Bar"
+                                    icon={<MdHistory fontSize="1.5rem" />}
+                                />
+                            </Tooltip>
 
                             <Text
                                 as="h5"
@@ -324,7 +394,7 @@ const Home = () => {
                                         _hover={{}}
                                         minWidth="11.8rem"
                                     >
-                                        Submit
+                                        Searching...
                                     </Button>
                                 </>
                             ) : (
@@ -384,10 +454,16 @@ const Home = () => {
                                         rowGap={{ base: '4', md: '5' }}
                                         alignItems="center"
                                         borderRadius="sm"
-                                        borderColor="rgb(228,228,228)"
+                                        borderColor={`${
+                                            cab.id === currrentCab
+                                                ? '#3182ce'
+                                                : 'rgb(228,228,228)'
+                                        }`}
                                         borderWidth="2px"
                                         rounded="md"
                                         w="full"
+                                        cursor="pointer"
+                                        onClick={() => selectCab(cab.id)}
                                     >
                                         <Image
                                             w="16"
@@ -452,9 +528,50 @@ const Home = () => {
                                     </Box>
                                 ))}
                             </Box>
+
+                            <Box marginTop="1.25rem">
+                                {bookingCabStatus === 'loading' ? (
+                                    <>
+                                        <Button
+                                            isLoading
+                                            loadingText="Submitting"
+                                            colorScheme="teal"
+                                            variant="outline"
+                                            fontSize={{
+                                                ssm: '1rem ',
+                                                sm: '0.96rem',
+                                            }}
+                                            fontWeight={600}
+                                            color="white"
+                                            bg="main.blue"
+                                            _active={{}}
+                                            _hover={{}}
+                                            minWidth="11.8rem"
+                                            width="100%"
+                                        >
+                                            Booking...
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <Button
+                                        bg="blue.500"
+                                        _hover={{ backgroundColor: 'blue.300' }}
+                                        textColor="white"
+                                        fontWeight="700"
+                                        fontSize="1.1rem"
+                                        minWidth="11.8rem"
+                                        width="100%"
+                                        onClick={bookCab}
+                                    >
+                                        Book Cab
+                                    </Button>
+                                )}
+                            </Box>
                         </Box>
                     )}
                 </Box>
+
+                <BookingHistoryDrawer isOpen={isOpen} onClose={onClose} />
             </Box>
         </>
     );
